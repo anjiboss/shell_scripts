@@ -1,0 +1,80 @@
+#!/bin/bash
+function prompt() {
+	echo "prompt mode";
+	read -p "Enter mode (up/down, default: up): " mode
+	read -p "Enter VM name (default: $2): " vm_name
+	if [ -z "$vm_name" ]; then
+		vm_name="$2"
+	fi
+	if [ "$mode" == "down" ]; then
+		stop_vm "$vm_name"
+	else 
+		start_vm "$vm_name"
+	fi
+}
+
+function start_vm () {
+	echo "Starting VM: $1"
+	VBoxManage startvm "$1" --type headless
+}
+
+function stop_vm () {
+	echo "Stopping VM: $1"
+	VBoxManage controlvm "$1" acpipowerbutton
+}
+
+function usage () {
+	echo "Usage: start_vm [-p|--prompt] [-vm|--virtual-machine <vm_name>] [-m|--mode <mode>] [-h|--help]"
+	echo "  -p|--prompt: Prompt mode"
+	echo "  -vm|--virtual-machine: Virtual machine name"
+	echo "  -m|--mode: Mode (up/down)"
+	echo "  -h|--help: Show this help"
+}
+
+
+is_prom=false
+machine_name="keyspider"
+mode="start"
+
+# Args count: $#
+# Args: $@
+if [ $# -gt 0 ]; then
+	while [[ $# -gt 0 ]]; do
+			case $1 in
+					-h|--help)
+							usage
+							exit 0
+							;;
+					-p|--prompt)
+							is_prom=true
+							shift
+							;;
+					-vm|--virtual-machine)
+							machine_name="$2"
+							shift 2
+							;;
+					-m|--mode)
+							mode="$2"
+							shift 2
+							;;
+					*)
+							echo "Unknown argument: $1"
+							usage
+							exit 1
+							;;
+			esac
+	done
+fi
+
+# Prompt Mode (if -p is set)
+if [ $is_prom == true ]; then
+    prompt "$mode" "$machine_name"
+else 
+	if [ "$mode" == "down" ]; then
+		# Stop VM
+		stop_vm "$machine_name"
+	else 
+		# Start VM
+		start_vm "$machine_name"
+	fi
+fi
